@@ -1,19 +1,385 @@
-<!doctype html>
-<html>
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<title>My static Space</title>
-		<link rel="stylesheet" href="style.css" />
-	</head>
-	<body>
-		<div class="card">
-			<h1>Welcome to your static Space!</h1>
-			<p>You can modify this app directly by editing <i>index.html</i> in the Files and versions tab.</p>
-			<p>
-				Also don't forget to check the
-				<a href="https://huggingface.co/docs/hub/spaces" target="_blank">Spaces documentation</a>.
-			</p>
-		</div>
-	</body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiFlash - Raspberry Pi Image Flasher</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .flashing-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-10 text-center">
+            <div class="flex justify-center items-center mb-4">
+                <i class="fas fa-raspberry-pi text-4xl text-red-600 mr-3"></i>
+                <h1 class="text-4xl font-bold text-gray-800">PiFlash</h1>
+            </div>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                A simple web-based tool to flash Raspberry Pi OS images to your SD cards. No additional software required!
+            </p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Device Selection -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-sd-card mr-2 text-blue-500"></i> Select Storage Device
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-hdd mr-3 text-gray-600"></i>
+                                <div>
+                                    <p class="font-medium">SanDisk Ultra 32GB</p>
+                                    <p class="text-sm text-gray-500">/dev/sdb • 29.8GB</p>
+                                </div>
+                            </div>
+                            <button class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
+                                Select
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-hdd mr-3 text-gray-600"></i>
+                                <div>
+                                    <p class="font-medium">Samsung EVO 64GB</p>
+                                    <p class="text-sm text-gray-500">/dev/sdc • 59.5GB</p>
+                                </div>
+                            </div>
+                            <button class="bg-gray-300 text-gray-600 px-3 py-1 rounded-full text-sm">
+                                Select
+                            </button>
+                        </div>
+                        <button class="w-full mt-2 flex items-center justify-center text-blue-500 hover:text-blue-700">
+                            <i class="fas fa-sync-alt mr-2"></i> Refresh Devices
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-cog mr-2 text-purple-500"></i> Flash Options
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Validation</label>
+                            <select class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                <option>Verify after writing</option>
+                                <option>Skip verification</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Compression</label>
+                            <select class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                <option>Auto (recommended)</option>
+                                <option>Always decompress</option>
+                                <option>Never decompress</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="unmount" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="unmount" class="ml-2 block text-sm text-gray-700">Unmount before writing</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="eject" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="eject" class="ml-2 block text-sm text-gray-700">Eject when complete</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Column - OS Selection -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover h-full">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-download mr-2 text-green-500"></i> Select OS Image
+                    </h2>
+                    
+                    <div class="mb-4">
+                        <div class="flex space-x-2 mb-3">
+                            <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">Recommended</button>
+                            <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">All</button>
+                            <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">Other</button>
+                        </div>
+                        <div class="relative">
+                            <input type="text" placeholder="Search OS images..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 overflow-y-auto max-h-96">
+                        <!-- OS Option 1 -->
+                        <div class="border border-gray-200 rounded-lg p-3 hover:border-blue-300 cursor-pointer">
+                            <div class="flex items-start">
+                                <img src="https://www.raspberrypi.com/app/uploads/2022/02/COLOUR-Raspberry-Pi-Symbol-Registered.png" alt="Raspberry Pi OS" class="w-12 h-12 object-contain mr-3">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-800">Raspberry Pi OS (64-bit)</h3>
+                                    <p class="text-sm text-gray-600">Recommended for most users</p>
+                                    <div class="flex items-center mt-1 text-xs text-gray-500">
+                                        <span class="mr-2">v2023-05-03</span>
+                                        <span>1.2GB</span>
+                                    </div>
+                                </div>
+                                <button class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full text-sm">
+                                    Select
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- OS Option 2 -->
+                        <div class="border border-gray-200 rounded-lg p-3 hover:border-blue-300 cursor-pointer">
+                            <div class="flex items-start">
+                                <img src="https://www.raspberrypi.com/app/uploads/2022/02/COLOUR-Raspberry-Pi-Symbol-Registered.png" alt="Raspberry Pi OS" class="w-12 h-12 object-contain mr-3">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-800">Raspberry Pi OS Lite (32-bit)</h3>
+                                    <p class="text-sm text-gray-600">Minimal image for headless setups</p>
+                                    <div class="flex items-center mt-1 text-xs text-gray-500">
+                                        <span class="mr-2">v2023-05-03</span>
+                                        <span>450MB</span>
+                                    </div>
+                                </div>
+                                <button class="bg-gray-300 text-gray-600 px-3 py-1 rounded-full text-sm">
+                                    Select
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- OS Option 3 -->
+                        <div class="border border-gray-200 rounded-lg p-3 hover:border-blue-300 cursor-pointer">
+                            <div class="flex items-start">
+                                <img src="https://ubuntu.com/wp-content/uploads/edd/UbuntuDesktop.svg" alt="Ubuntu" class="w-12 h-12 object-contain mr-3">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-800">Ubuntu Server 22.04 LTS</h3>
+                                    <p class="text-sm text-gray-600">Official Ubuntu for Raspberry Pi</p>
+                                    <div class="flex items-center mt-1 text-xs text-gray-500">
+                                        <span class="mr-2">v22.04.2</span>
+                                        <span>1.8GB</span>
+                                    </div>
+                                </div>
+                                <button class="bg-gray-300 text-gray-600 px-3 py-1 rounded-full text-sm">
+                                    Select
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- OS Option 4 -->
+                        <div class="border border-gray-200 rounded-lg p-3 hover:border-blue-300 cursor-pointer">
+                            <div class="flex items-start">
+                                <img src="https://retropie.org.uk/wp-content/uploads/2017/07/cropped-RetroPieLogo-32x32.png" alt="RetroPie" class="w-12 h-12 object-contain mr-3">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-800">RetroPie 4.8</h3>
+                                    <p class="text-sm text-gray-600">Turn your Pi into a retro gaming machine</p>
+                                    <div class="flex items-center mt-1 text-xs text-gray-500">
+                                        <span class="mr-2">v4.8</span>
+                                        <span>2.5GB</span>
+                                    </div>
+                                </div>
+                                <button class="bg-gray-300 text-gray-600 px-3 py-1 rounded-full text-sm">
+                                    Select
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Custom Image Option -->
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 cursor-pointer">
+                            <i class="fas fa-file-upload text-3xl text-gray-400 mb-2"></i>
+                            <h3 class="font-medium text-gray-700">Use Custom Image</h3>
+                            <p class="text-sm text-gray-500">Upload your own .img or .zip file</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Flash Progress -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-bolt mr-2 text-yellow-500"></i> Flash Summary
+                    </h2>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                            <h3 class="font-medium text-blue-800">Ready to Flash</h3>
+                        </div>
+                        <p class="text-sm text-blue-700">
+                            You're about to flash <span class="font-semibold">Raspberry Pi OS (64-bit)</span> to <span class="font-semibold">SanDisk Ultra 32GB</span>.
+                        </p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Wi-Fi Configuration (Optional)</label>
+                            <input type="text" placeholder="SSID" class="w-full p-2 border border-gray-300 rounded-md mb-2 focus:ring-blue-500 focus:border-blue-500">
+                            <input type="password" placeholder="Password" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Hostname (Optional)</label>
+                            <input type="text" placeholder="raspberrypi" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Enable SSH</label>
+                            <select class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                <option>Disabled</option>
+                                <option>Enabled with password authentication</option>
+                                <option>Enabled with public key only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button id="flashButton" class="w-full mt-6 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-bolt mr-2"></i> Flash Now
+                    </button>
+                </div>
+
+                <!-- Progress Section (Initially Hidden) -->
+                <div id="progressSection" class="bg-white rounded-xl shadow-md p-6 card-hover hidden">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-spinner fa-spin mr-2 text-blue-500"></i> Flashing in Progress
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                <span>Writing image...</span>
+                                <span id="progressPercent">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div id="progressBar" class="progress-bar bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
+                                <h3 class="font-medium text-yellow-800">Important</h3>
+                            </div>
+                            <p class="text-sm text-yellow-700 mt-1">
+                                Do not remove the SD card or close this browser tab during the flashing process.
+                            </p>
+                        </div>
+
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                <span>Downloaded image (1.2GB)</span>
+                            </div>
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-spinner fa-spin text-blue-500 mr-2 flashing-animation"></i>
+                                <span>Writing to device (12MB/s)</span>
+                            </div>
+                            <div class="flex items-center text-gray-400">
+                                <i class="far fa-clock mr-2"></i>
+                                <span>Verification (pending)</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-200">
+                            <p class="text-sm text-gray-500">
+                                <i class="fas fa-clock mr-1"></i> Estimated time remaining: <span id="timeRemaining">5 minutes</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Completion Section (Initially Hidden) -->
+                <div id="completionSection" class="bg-white rounded-xl shadow-md p-6 card-hover hidden">
+                    <div class="text-center">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                            <i class="fas fa-check text-green-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Flash Complete!</h3>
+                        <p class="text-sm text-gray-500 mb-4">
+                            Your SD card is ready to use with Raspberry Pi OS (64-bit).
+                        </p>
+                        <div class="bg-gray-50 p-3 rounded-lg text-left mb-4">
+                            <p class="text-sm font-medium text-gray-700 mb-1">Next Steps:</p>
+                            <ul class="text-sm text-gray-600 list-disc list-inside space-y-1">
+                                <li>Insert the SD card into your Raspberry Pi</li>
+                                <li>Connect power to boot the device</li>
+                                <li>Follow the setup instructions</li>
+                            </ul>
+                        </div>
+                        <button class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                            Flash Another Card
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-16 text-center text-sm text-gray-500">
+            <p>PiFlash is an open-source tool. Use at your own risk.</p>
+            <p class="mt-1">Not affiliated with the Raspberry Pi Foundation.</p>
+            <div class="flex justify-center space-x-4 mt-3">
+                <a href="#" class="text-blue-500 hover:text-blue-700"><i class="fab fa-github"></i> GitHub</a>
+                <a href="#" class="text-blue-500 hover:text-blue-700"><i class="fas fa-question-circle"></i> Help</a>
+                <a href="#" class="text-blue-500 hover:text-blue-700"><i class="fas fa-bug"></i> Report Issue</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Simulate the flashing process
+        document.getElementById('flashButton').addEventListener('click', function() {
+            // Hide the flash button and show progress section
+            document.getElementById('flashButton').classList.add('hidden');
+            document.getElementById('progressSection').classList.remove('hidden');
+            
+            // Simulate progress
+            let progress = 0;
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            const timeRemaining = document.getElementById('timeRemaining');
+            
+            const interval = setInterval(() => {
+                progress += Math.random() * 5;
+                if (progress > 100) progress = 100;
+                
+                progressBar.style.width = `${progress}%`;
+                progressPercent.textContent = `${Math.round(progress)}%`;
+                
+                // Update time remaining
+                const remaining = Math.round((100 - progress) * 0.8);
+                timeRemaining.textContent = `${remaining} seconds`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    
+                    // Show completion after a delay
+                    setTimeout(() => {
+                        document.getElementById('progressSection').classList.add('hidden');
+                        document.getElementById('completionSection').classList.remove('hidden');
+                    }, 1000);
+                }
+            }, 500);
+        });
+    </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - <a href="https://enzostvs-deepsite.hf.space?remix=S-Dreamer/piflash" style="color: #fff;text-decoration: underline;" target="_blank" >🧬 Remix</a></p></body>
 </html>
