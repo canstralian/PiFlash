@@ -1,3 +1,13 @@
+---
+license: apache-2.0
+title: PiFlash
+sdk: static
+emoji: 📈
+colorFrom: red
+colorTo: green
+short_description: A modern, web-based tool for flashing Raspberry Pi OS images
+---
+
 # PiFlash - Raspberry Pi Image Flasher Web Application
 
 A modern, web-based tool for flashing Raspberry Pi OS images to SD cards. Built with vanilla JavaScript, HTML5, and Tailwind CSS for maximum compatibility and ease of use.
