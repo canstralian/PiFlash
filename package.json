@@ -1,0 +1,32 @@
+{
+  "name": "piflash-web-app",
+  "version": "1.0.0",
+  "description": "A web-based Raspberry Pi image flasher application",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve -s . -p 3000",
+    "build": "echo 'Static files - no build required'",
+    "test": "jest",
+    "dev": "live-server --port=3000 --open=index.html"
+  },
+  "keywords": [
+    "raspberry-pi",
+    "flasher",
+    "web-app",
+    "sd-card",
+    "imaging"
+  ],
+  "author": "PiFlash Development Team",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "live-server": "^1.2.2",
+    "serve": "^14.2.0"
+  },
+  "dependencies": {},
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
