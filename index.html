@@ -8,15 +8,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8 text-gray-800 dark:text-gray-200">
         <!-- Header -->
         <header class="mb-10 text-center">
-            <div class="flex justify-center items-center mb-4">
-                <i class="fas fa-raspberry-pi text-4xl text-red-600 mr-3"></i>
-                <h1 class="text-4xl font-bold text-gray-800">PiFlash</h1>
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center">
+                    <i class="fas fa-raspberry-pi text-4xl text-red-600 mr-3"></i>
+                    <h1 class="text-4xl font-bold text-gray-800 dark:text-gray-100">PiFlash</h1>
+                </div>
+                <button id="themeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
             </div>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 A simple web-based tool to flash Raspberry Pi OS images to your SD cards. No additional software required!
             </p>
         </header>
@@ -25,7 +31,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Column - Device Selection -->
             <div class="lg:col-span-1 space-y-6">
-                <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 card-hover transition-colors duration-200">
                     <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                         <i class="fas fa-sd-card mr-2 text-blue-500"></i> Select Storage Device
                     </h2>
@@ -83,7 +89,7 @@
                             <button id="tabOther" class="tab-button px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">Other</button>
                         </div>
                         <div class="relative">
-                            <input type="text" id="searchOS" placeholder="Search OS images..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <input type="text" id="searchOS" placeholder="Search OS images..." class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                             <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                         </div>
                     </div>
@@ -111,7 +117,7 @@
                         <i class="fas fa-bolt mr-2 text-yellow-500"></i> Flash Summary
                     </h2>
                     
-                    <div id="flashSummary" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                    <div id="flashSummary" class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-4">
                         <div class="flex items-center mb-2">
                             <i class="fas fa-info-circle text-gray-500 mr-2"></i>
                             <h3 class="font-medium text-gray-700">Select Image and Device</h3>
@@ -230,5 +236,20 @@
     </div>
 
     <script src="js/app.js"></script>
-</body>
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        // Check for saved theme preference or use system preference
+        const savedTheme = localStorage.getItem('theme') || 
+                         (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        html.classList.toggle('dark', savedTheme === 'dark');
+        
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        });
+    </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=S-Dreamer/piflash" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p></body>
 </html>
