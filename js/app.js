@@ -11,7 +11,44 @@ class PiFlashApp {
     this.flashingInterval = null;
     this.currentTab = 'recommended';
     
-    // Mock data for demonstration
+    // DEV_MODE: Toggle between mock data and live device detection
+    // Set to true for development/testing, false for production
+    this.DEV_MODE = typeof process !== 'undefined' && process.env && process.env.DEV_MODE === 'true' ? true : true;
+    
+    // Initialize with empty data - will be loaded based on DEV_MODE
+    this.mockDevices = [];
+    this.osImages = {
+      recommended: [],
+      all: [],
+      other: []
+    };
+
+    this.init();
+  }
+
+  /**
+   * Initialize the application
+   */
+  init() {
+    console.log('Initializing PiFlash application...');
+    console.log('DEV_MODE:', this.DEV_MODE);
+    
+    // Load mock data if in DEV_MODE
+    if (this.DEV_MODE) {
+      this.loadMockData();
+    }
+    
+    this.setupEventListeners();
+    this.loadDevices();
+    this.loadOSImages();
+    this.updateFlashButton();
+  }
+
+  /**
+   * Load mock data for development mode
+   */
+  loadMockData() {
+    // Mock devices data
     this.mockDevices = [
       {
         id: 'sdb',
@@ -39,6 +76,7 @@ class PiFlashApp {
       }
     ];
 
+    // Mock OS images data
     this.osImages = {
       recommended: [
         {
@@ -136,19 +174,6 @@ class PiFlashApp {
       ],
       other: []
     };
-
-    this.init();
-  }
-
-  /**
-   * Initialize the application
-   */
-  init() {
-    console.log('Initializing PiFlash application...');
-    this.setupEventListeners();
-    this.loadDevices();
-    this.loadOSImages();
-    this.updateFlashButton();
   }
 
   /**
@@ -221,14 +246,14 @@ class PiFlashApp {
    * Validate input fields
    */
   validateInput(input) {
-    const value = input.value.trim();
+    const value = input.value;
     
     if (input.id === 'hostname') {
-      // Validate hostname format
-      const hostnameRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*$/;
-      if (value && !hostnameRegex.test(value)) {
+      // Use centralized validation
+      const validation = ValidationUtils.validateHostname(value);
+      if (!validation.valid) {
         input.classList.add('border-red-500');
-        this.showTooltip(input, 'Invalid hostname format');
+        this.showTooltip(input, validation.error);
       } else {
         input.classList.remove('border-red-500');
         this.hideTooltip(input);
@@ -236,10 +261,23 @@ class PiFlashApp {
     }
 
     if (input.id === 'wifiSSID') {
-      // Basic SSID validation
-      if (value && value.length > 32) {
+      // Use centralized validation
+      const validation = ValidationUtils.validateSSID(value);
+      if (!validation.valid) {
         input.classList.add('border-red-500');
-        this.showTooltip(input, 'SSID too long (max 32 characters)');
+        this.showTooltip(input, validation.error);
+      } else {
+        input.classList.remove('border-red-500');
+        this.hideTooltip(input);
+      }
+    }
+
+    if (input.id === 'wifiPassword') {
+      // Use centralized validation
+      const validation = ValidationUtils.validateWiFiPassword(value);
+      if (!validation.valid) {
+        input.classList.add('border-red-500');
+        this.showTooltip(input, validation.error);
       } else {
         input.classList.remove('border-red-500');
         this.hideTooltip(input);
@@ -344,6 +382,21 @@ class PiFlashApp {
    */
   selectDevice(device) {
     console.log('Selecting device:', device.name);
+    
+    // Validate device path using centralized validation
+    const validation = ValidationUtils.validateDevicePath(device.path);
+    if (!validation.valid) {
+      console.error('Device validation failed:', validation.error);
+      alert(`Cannot select device: ${validation.error}`);
+      return;
+    }
+    
+    // Check if write is allowed (sandboxing guard)
+    if (!ValidationUtils.isWriteAllowed(device.path)) {
+      console.error('Write operation not allowed for device:', device.path);
+      alert('This device cannot be written to for security reasons.');
+      return;
+    }
     
     // Remove previous selection
     document.querySelectorAll('.device-card').forEach(card => {
@@ -461,6 +514,14 @@ class PiFlashApp {
    */
   selectOSImage(osImage) {
     console.log('Selecting OS image:', osImage.name);
+    
+    // Validate OS image using centralized validation
+    const validation = ValidationUtils.validateOSImage(osImage);
+    if (!validation.valid) {
+      console.error('OS image validation failed:', validation.error);
+      alert(`Cannot select OS image: ${validation.error}`);
+      return;
+    }
     
     // Remove previous selection
     document.querySelectorAll('.os-image-card').forEach(card => {
@@ -664,6 +725,25 @@ class PiFlashApp {
     if (!this.selectedDevice || !this.selectedOS) return;
 
     console.log('Starting flash process...');
+    
+    // Validate device and OS compatibility with centralized validation
+    const compatibility = ValidationUtils.validateDeviceCompatibility(
+      this.selectedDevice, 
+      this.selectedOS
+    );
+    
+    if (!compatibility.compatible) {
+      console.error('Compatibility check failed:', compatibility.error);
+      alert(`Cannot flash: ${compatibility.error}`);
+      return;
+    }
+    
+    // Final sandboxing check before write operation
+    if (!ValidationUtils.isWriteAllowed(this.selectedDevice.path)) {
+      console.error('Write operation blocked by sandboxing guard:', this.selectedDevice.path);
+      alert('Write operation not allowed for security reasons.');
+      return;
+    }
     
     // Show confirmation dialog
     const confirmed = confirm(
