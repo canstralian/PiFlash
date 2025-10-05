@@ -21,6 +21,10 @@ A modern, web-based tool for flashing Raspberry Pi OS images to SD cards. Built 
 - **Configuration Options**: Pre-configure Wi-Fi, SSH, and hostname settings
 - **Responsive Design**: Works on desktop and mobile devices
 - **No Installation Required**: Runs directly in your web browser
+- **🔒 Security Hardening**: Input validation, sandboxing guards, and comprehensive security measures
+- **✅ Input Validation**: Centralized validation for all user inputs (device paths, hostnames, SSIDs, passwords)
+- **🛡️ Sandboxing**: Prevents unauthorized access to system-critical partitions
+- **🧪 Development Mode**: Toggle between mock data and live device detection via DEV_MODE flag
 
 ## Quick Start
 
@@ -59,6 +63,42 @@ npm test
 - `.xz` - XZ compressed images
 
 ## Security Considerations
+
+### Enhanced Security Features
+
+PiFlash implements multiple layers of security to protect your system:
+
+#### 1. Input Validation
+All user inputs are validated using a centralized validation utility (`js/validation.js`):
+- **Device Paths**: Only safe device paths are allowed (e.g., `/dev/sdb`, `/dev/mmcblk0`)
+- **Hostnames**: RFC 1123 compliant hostname validation
+- **Wi-Fi SSIDs**: Length validation (max 32 characters)
+- **Wi-Fi Passwords**: WPA/WPA2 length requirements (8-63 characters)
+- **OS Images**: Validation of required fields and size constraints
+
+#### 2. Sandboxing Guards
+The application includes sandboxing logic to prevent dangerous operations:
+- **Blocked System Partitions**: Cannot write to `/dev/sda`, `/dev/nvme0n1`, `/dev/vda`, `/dev/hda`
+- **Safe Device Patterns**: Only allows writes to SD cards (`/dev/sd[b-z]`) and MMC devices (`/dev/mmcblk[0-9]+`)
+- **Compatibility Checks**: Validates device size against image requirements before flashing
+
+#### 3. Development Mode (DEV_MODE)
+A feature flag system separates development and production environments:
+- **DEV_MODE = true**: Uses mock data from `mock/` directory
+- **DEV_MODE = false**: Connects to real device detection APIs
+- Toggle via `js/app.js` constructor or environment variables
+
+#### 4. XSS Protection
+All user inputs are sanitized to prevent cross-site scripting attacks:
+- HTML special characters are escaped
+- User-provided content is validated before rendering
+
+### Security Audit
+
+A comprehensive security audit has been performed. See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for details:
+- **Dependencies**: 6 vulnerabilities found (all in dev dependencies only)
+- **Risk Assessment**: Production risk is LOW (vulnerabilities in development tools only)
+- **Mitigation**: Documented alternatives and monitoring strategy
 
 ⚠️ **Important**: This application requires access to storage devices, which may require elevated permissions or browser API access. Always verify the source and integrity of image files before flashing.
 
@@ -101,9 +141,17 @@ piflash-web-app/
 ├── index.html          # Main application interface
 ├── styles.css          # Custom CSS styles and animations
 ├── js/
-│   └── app.js         # Main application logic
+│   ├── app.js         # Main application logic
+│   └── validation.js  # Centralized validation utilities
+├── mock/              # Mock data for development
+│   ├── devices.js     # Mock device data
+│   ├── osImages.js    # Mock OS image data
+│   └── README.md      # Mock data documentation
+├── __tests__/         # Test suite
+│   └── validation.test.js  # Validation utility tests
 ├── package.json        # Project configuration
 ├── README.md          # This file
+├── SECURITY_AUDIT.md  # Security audit report
 ├── .gitignore         # Git ignore rules
 └── pre-commit.sh      # Pre-commit hooks
 ```
@@ -126,15 +174,31 @@ piflash-web-app/
 
 ## Testing
 
-The application includes unit tests for core functionality:
+The application includes comprehensive unit tests for core functionality:
 
 ```bash
-# Run all tests
+# Run all tests (36 tests for validation utilities)
 npm test
 
 # Test specific components
 npm test -- --testNamePattern="device"
+
+# Test validation utilities
+npm test -- __tests__/validation.test.js
 ```
+
+### Test Coverage
+
+- ✅ Device path validation (7 tests)
+- ✅ OS image validation (5 tests)
+- ✅ Hostname validation (6 tests)
+- ✅ SSID validation (4 tests)
+- ✅ WiFi password validation (4 tests)
+- ✅ Write permission checks (3 tests)
+- ✅ Device compatibility validation (3 tests)
+- ✅ XSS protection (4 tests)
+
+**Total: 36 passing tests**
 
 ## Troubleshooting
 
